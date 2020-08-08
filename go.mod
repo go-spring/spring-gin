@@ -1,4 +1,4 @@
-module github.com/go-spring/go-spring-message
+module github.com/go-spring/go-spring-gin
 
 go 1.12
 
