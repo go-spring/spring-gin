@@ -22,9 +22,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/go-spring/go-spring-parent/spring-logger"
-	"github.com/go-spring/go-spring-parent/spring-utils"
-	"github.com/go-spring/go-spring-web"
+	"github.com/go-spring/spring-logger"
+	"github.com/go-spring/spring-utils"
+	"github.com/go-spring/spring-web"
 )
 
 func init() {

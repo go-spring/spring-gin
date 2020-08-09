@@ -3,7 +3,7 @@
 WORKSPACE=$(cd `dirname $0` && pwd -P)
 
 # NOTE: 只需要修改这里
-MODULE_NAME=go-spring-gin
+MODULE_NAME=spring-gin
 
 PACKAGE_PATH=github.com/go-spring
 export GOPATH=/tmp/godoc-${MODULE_NAME}

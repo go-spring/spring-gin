@@ -1,1 +1,1 @@
-# go-spring-gin
+# spring-gin
