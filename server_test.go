@@ -29,13 +29,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-spring/spring-base/assert"
-	"github.com/go-spring/spring-core/conf"
+	"github.com/go-spring/spring-base/log"
 	"github.com/go-spring/spring-core/web"
 	"github.com/go-spring/spring-gin"
 )
 
 func TestContext_PanicSysError(t *testing.T) {
-	c := SpringGin.NewContainer(conf.WebServerConfig{Port: 8080})
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	c.GetMapping("/", func(webCtx web.Context) {
 		panic(&net.OpError{
 			Op:     "dial",
@@ -60,7 +60,11 @@ func TestContext_PanicSysError(t *testing.T) {
 }
 
 func TestContext_PanicString(t *testing.T) {
-	c := SpringGin.NewContainer(conf.WebServerConfig{Port: 8080})
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
+	c.AddFilter(web.FuncPrefilter(func(ctx web.Context, chain web.FilterChain) {
+		log.Info("<<log>>")
+		chain.Continue(ctx)
+	}))
 	c.GetMapping("/", func(webCtx web.Context) {
 		panic("this is an error")
 	})
@@ -79,7 +83,7 @@ func TestContext_PanicString(t *testing.T) {
 }
 
 func TestContext_PanicError(t *testing.T) {
-	c := SpringGin.NewContainer(conf.WebServerConfig{Port: 8080})
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	c.GetMapping("/", func(webCtx web.Context) {
 		panic(errors.New("this is an error"))
 	})
@@ -98,7 +102,7 @@ func TestContext_PanicError(t *testing.T) {
 }
 
 func TestContext_PanicWebHttpError(t *testing.T) {
-	c := SpringGin.NewContainer(conf.WebServerConfig{Port: 8080})
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	c.GetMapping("/", func(webCtx web.Context) {
 		panic(&web.HttpError{
 			Code:    http.StatusNotFound,
@@ -119,7 +123,7 @@ func TestContext_PanicWebHttpError(t *testing.T) {
 }
 
 func TestFilter_PanicWebHttpError(t *testing.T) {
-	c := SpringGin.NewContainer(conf.WebServerConfig{Port: 8080})
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	go c.Start()
 	defer c.Stop(context.Background())
 	time.Sleep(10 * time.Millisecond)
@@ -134,7 +138,7 @@ func TestFilter_PanicWebHttpError(t *testing.T) {
 }
 
 func TestFilter_Abort(t *testing.T) {
-	c := SpringGin.NewContainer(conf.WebServerConfig{Port: 8080})
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	c.AddFilter(web.FuncFilter(func(ctx web.Context, chain web.FilterChain) {
 		if ctx.FormValue("filter") == "1" {
 			ctx.String("1")
@@ -199,4 +203,40 @@ func TestFilter_Abort(t *testing.T) {
 	testFunc("http://127.0.0.1:8080/index?filter=4", "4", 200)
 	testFunc("http://127.0.0.1:8080/index?filter=p1", "p1", 200)
 	testFunc("http://127.0.0.1:8080/index?filter=p2", "p2", 200)
+}
+
+func TestContainer_Static(t *testing.T) {
+
+	c := SpringGin.New(web.ServerConfig{Port: 8080})
+	go c.Start()
+	defer c.Stop(context.Background())
+	c.File("/", "testdata/public/a.txt")
+	c.Static("/public", "testdata/public/")
+	time.Sleep(10 * time.Millisecond)
+
+	{
+		response, err := http.Get("http://127.0.0.1:8080/public/a.txt")
+		if err != nil {
+			panic(err)
+		}
+		defer response.Body.Close()
+		b, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(string(b))
+		fmt.Println(response.Status)
+		assert.Equal(t, response.StatusCode, http.StatusOK)
+		assert.Equal(t, string(b), "hello world!")
+	}
+
+	{
+		response, err := http.Get("http://127.0.0.1:8080/")
+		if err != nil {
+			panic(err)
+		}
+		defer response.Body.Close()
+		b, _ := ioutil.ReadAll(response.Body)
+		fmt.Println(string(b))
+		fmt.Println(response.Status)
+		assert.Equal(t, response.StatusCode, http.StatusOK)
+		assert.Equal(t, string(b), "hello world!")
+	}
 }
