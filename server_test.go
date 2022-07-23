@@ -34,6 +34,10 @@ import (
 	"github.com/go-spring/spring-gin"
 )
 
+var (
+	logger = log.GetLogger()
+)
+
 func TestContext_PanicSysError(t *testing.T) {
 	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	c.GetMapping("/", func(webCtx web.Context) {
@@ -62,7 +66,7 @@ func TestContext_PanicSysError(t *testing.T) {
 func TestContext_PanicString(t *testing.T) {
 	c := SpringGin.New(web.ServerConfig{Port: 8080})
 	c.AddFilter(web.FuncPrefilter(func(ctx web.Context, chain web.FilterChain) {
-		log.Info("<<log>>")
+		logger.Info("<<log>>")
 		chain.Continue(ctx)
 	}))
 	c.GetMapping("/", func(webCtx web.Context) {
@@ -208,10 +212,10 @@ func TestFilter_Abort(t *testing.T) {
 func TestContainer_Static(t *testing.T) {
 
 	c := SpringGin.New(web.ServerConfig{Port: 8080})
-	go c.Start()
-	defer c.Stop(context.Background())
 	c.File("/", "testdata/public/a.txt")
 	c.Static("/public", "testdata/public/")
+	go c.Start()
+	defer c.Stop(context.Background())
 	time.Sleep(10 * time.Millisecond)
 
 	{
