@@ -80,14 +80,7 @@ func (h *serverHandler) Start(s web.Server) error {
 			webCtx = newContext(nil, "", "", ginCtx)
 		}
 
-		// 流量录制
-		web.StartRecord(webCtx)
-		defer func() { web.StopRecord(webCtx) }()
-
-		// 流量回放
-		web.StartReplay(webCtx)
-		defer func() { web.StopReplay(webCtx) }()
-
+		_ = webCtx
 		ginCtx.Next()
 	})
 
@@ -174,9 +167,7 @@ type ginFilterChain struct {
 }
 
 // Next 内部调用 gin.Context 对象的 Next 函数驱动链条向后执行
-func (chain *ginFilterChain) Next(_ web.Context) { chain.ginCtx.Next() }
-
-func (chain *ginFilterChain) Continue(_ web.Context) { chain.ginCtx.Next() }
+func (chain *ginFilterChain) Next(_ web.Context, _ web.NextOperation) { chain.ginCtx.Next() }
 
 // recoveryFilter 适配 gin 的恢复过滤器
 type recoveryFilter struct {
@@ -230,5 +221,5 @@ func (f *recoveryFilter) Invoke(webCtx web.Context, chain web.FilterChain) {
 		}
 	}()
 
-	chain.Next(webCtx)
+	chain.Next(webCtx, web.Recursive)
 }
